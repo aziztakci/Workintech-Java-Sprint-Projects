@@ -1,7 +1,9 @@
 package com.workintech.s18d4.service;
 
 import com.workintech.s18d4.dto.CustomerResponse;
+import com.workintech.s18d4.entity.Address;
 import com.workintech.s18d4.entity.Customer;
+import com.workintech.s18d4.repository.AddressRepository;
 import com.workintech.s18d4.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,10 +17,12 @@ import java.util.stream.Collectors;
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final AddressRepository addressRepository;
 
     @Autowired
-    public CustomerServiceImpl(CustomerRepository customerRepository) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, AddressRepository addressRepository) {
         this.customerRepository = customerRepository;
+        this.addressRepository = addressRepository;
     }
 
     @Override
@@ -39,6 +43,16 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional
     @Override
     public CustomerResponse save(Customer customer) {
+        // Senaryo 2: İstemci var olan bir adresi ID ile bağlamak istiyorsa (Örn: {"address": {"id": 1}})
+        if (customer.getAddress() != null && customer.getAddress().getId() > 0) {
+            Address existingAddress = addressRepository.findById(customer.getAddress().getId())
+                    .orElseThrow(() -> new RuntimeException("Address not found with id: " + customer.getAddress().getId()));
+
+            customer.setAddress(existingAddress);
+        }
+        // Senaryo 1: İstemci yeni adresi müşteriyle birlikte JSON içinde sıfırdan gönderiyorsa
+        // customer.getAddress().getId() == 0 olacağı için bu bloğa girmez, CascadeType.ALL adresi otomatik kaydeder.
+
         Customer savedCustomer = customerRepository.save(customer);
         return new CustomerResponse(savedCustomer.getId(), savedCustomer.getFirstName(), savedCustomer.getLastName());
     }

@@ -30,7 +30,7 @@ public class AccountController {
     }
 
     @PostMapping("/{customerId}")
-    public AccountResponse save(@RequestBody Account account, @PathVariable long customerId) {
+    public AccountResponse save(@PathVariable long customerId,@RequestBody Account account ) {
         return accountService.save(account, customerId);
     }
 
